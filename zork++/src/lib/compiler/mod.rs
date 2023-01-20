@@ -40,14 +40,13 @@ pub fn build_project(base_path: &Path, _cli_args: &CliArgs) -> Result<()> {
     // 1st - Build the modules
     build_modules(&config, &mut commands)?;
     // 2st - Build the executable or the tests
-    let bmi_and_obj_files = helpers::get_bmi_and_obj_files(
-        &config.compiler.cpp_compiler,
-        &commands.interfaces,
-        &commands.implementations,
-    );
+    //let bmi_and_obj_files = helpers::get_bmi_and_obj_files(
+    //    &config.compiler.cpp_compiler,
+    //    &commands.interfaces,
+    //    &commands.implementations,
+    //);
 
-    commands.sources = build_executable(&config, bmi_and_obj_files)?;
-    log::info!("Generated commands: {}", &commands);
+    build_executable(&config, &mut commands)?;
 
     Ok(())
 }
@@ -56,22 +55,20 @@ pub fn build_project(base_path: &Path, _cli_args: &CliArgs) -> Result<()> {
 /// and the
 fn build_executable<'a>(
     config: &ZorkModel,
-    bmis_and_obj_files: impl Iterator<Item = Argument<'a>>,
+    commands: &'a mut Commands<'a>,
 ) -> Result<Vec<Argument<'a>>> {
-    let mut r = Vec::new();
+    let mut args = Vec::new();
 
     let sources = helpers::glob_resolver(&config.executable.sources)?;
 
-    r.extend(sources::generate_main_command_line_args(
-        config,
-        sources,
-        bmis_and_obj_files,
-        false,
+    args.extend(sources::generate_main_command_line_args(
+        config, sources, commands, false,
     ));
-    log::info!("Command for the binary: {:?}", r);
-    execute_command(&config.compiler.cpp_compiler, &r)?;
 
-    Ok(r)
+    log::info!("Command for the binary: {:?}", args);
+    execute_command(&config.compiler.cpp_compiler, &args)?;
+
+    Ok(args)
 }
 
 /// Triggers the build process for compile the declared modules in the project
@@ -83,12 +80,14 @@ fn build_modules(config: &ZorkModel, commands: &mut Commands<'_>) -> Result<()> 
     // TODO Dev todo's!
     // Change the string types for strong types (ie, unit structs with strong typing)
     // Also, can we check first is modules and interfaces .is_some() and then lauch this process?
+    log::info!("\n\nBuilding the module interfaces");
     prebuild_module_interfaces(config, &config.modules.interfaces, commands);
 
     for miu in &commands.interfaces {
         execute_command(commands.compiler, miu)?
     }
 
+    log::info!("\n\nBuilding the module implementations");
     compile_module_implementations(config, &config.modules.implementations, commands);
 
     for impls in &commands.implementations {
@@ -190,9 +189,11 @@ mod sources {
     pub fn generate_main_command_line_args<'a>(
         config: &ZorkModel,
         sources: Vec<impl TranslationUnit>,
-        bmis_and_obj_files: impl Iterator<Item = Argument<'a>>,
+        commands: &'a mut Commands<'a>,
         is_tests_process: bool,
     ) -> Vec<Argument<'a>> {
+        log::info!("\n\nGenerating the main command line");
+
         let compiler = &config.compiler.cpp_compiler;
         let (base_path, out_dir, executable_name) =
             helpers::generate_common_args_for_binary(config, is_tests_process);
@@ -202,10 +203,11 @@ mod sources {
 
         match compiler {
             CppCompiler::CLANG => {
+                if let Some(std_lib) = &config.compiler.std_lib {
+                    arguments.push(Argument::from(format!("-stdlib={}", std_lib.as_str())))
+                }
+
                 arguments.push(Argument::from("-fimplicit-modules"));
-                arguments.push(Argument::from(format!(
-                    "-fprebuilt-module-path={out_dir}/{compiler}/modules/interfaces"
-                )));
 
                 if cfg!(target_os = "windows") {
                     arguments.push(Argument::from(format!(
@@ -214,6 +216,10 @@ mod sources {
                 } else {
                     arguments.push(Argument::from("-fimplicit-module-maps"))
                 }
+
+                arguments.push(Argument::from(format!(
+                    "-fprebuilt-module-path={out_dir}/{compiler}/modules/interfaces"
+                )));
 
                 arguments.push(Argument::from("-o"));
                 arguments.push(Argument::from(format!(
@@ -225,9 +231,21 @@ mod sources {
                     }
                 )));
 
-                arguments.extend(bmis_and_obj_files);
+                // log::info!("\nBMIS AND OBJS FILES: {:?}", bmis_and_obj_files.collect::<Vec<_>>());
+                arguments.extend(commands.generated_files_paths.clone().into_iter());
             }
-            CppCompiler::MSVC => todo!(),
+            CppCompiler::MSVC => {
+                arguments.push(Argument::from("/EHsc"));
+                arguments.push(Argument::from("/nologo"));
+                arguments.push(Argument::from("/ifcSearchDir"));
+                arguments.push(Argument::from(format!(
+                    "{out_dir}/{compiler}/modules/interfaces"
+                )));
+                arguments.push(Argument::from(format!("/Fo{out_dir}/{compiler}\\")));
+                arguments.push(Argument::from(format!(
+                    "/Fe{out_dir}/{compiler}/{executable_name}.exe"
+                )));
+            }
             CppCompiler::GCC => todo!(),
         };
 
@@ -280,9 +298,10 @@ mod sources {
                 // The resultant BMI as a .pcm file
                 arguments.push(Argument::from("-o"));
                 // The output file
-                let miu = helpers::generate_prebuild_miu(compiler, out_dir, interface);
-                commands.generated_files_paths.push(miu.clone());
-                arguments.push(Argument::from(miu));
+                let miu_file_path =
+                    Argument::from(helpers::generate_prebuild_miu(compiler, out_dir, interface));
+                commands.generated_files_paths.push(miu_file_path.clone());
+                arguments.push(miu_file_path);
                 // The input file
                 arguments.push(Argument::from(helpers::add_input_file(
                     interface, base_path,
@@ -290,12 +309,14 @@ mod sources {
             }
             CppCompiler::MSVC => {
                 arguments.push(Argument::from("-EHsc"));
+                arguments.push(Argument::from("/nologo"));
                 arguments.push(Argument::from("-c"));
                 // The output .ifc file
                 arguments.push(Argument::from("-ifcOutput"));
-                let miu = helpers::generate_prebuild_miu(compiler, out_dir, interface);
-                commands.generated_files_paths.push(miu.clone());
-                arguments.push(Argument::from(miu));
+                let miu_file_path =
+                    Argument::from(helpers::generate_prebuild_miu(compiler, out_dir, interface));
+                commands.generated_files_paths.push(miu_file_path.clone());
+                arguments.push(miu_file_path);
                 // The output .obj file
                 arguments.push(Argument::from(format!(
                     "/Fo{out_dir}/{compiler}/modules/interfaces\\"
@@ -318,9 +339,10 @@ mod sources {
                 )));
                 // The output file
                 arguments.push(Argument::from("-o"));
-                let miu = helpers::generate_prebuild_miu(compiler, out_dir, interface);
-                commands.generated_files_paths.push(miu.clone());
-                arguments.push(Argument::from(miu));
+                let miu_file_path =
+                    Argument::from(helpers::generate_prebuild_miu(compiler, out_dir, interface));
+                commands.generated_files_paths.push(miu_file_path.clone());
+                arguments.push(miu_file_path);
             }
         }
 
@@ -359,15 +381,13 @@ mod sources {
 
                 // The resultant object file
                 arguments.push(Argument::from("-o"));
-                let obj_file = helpers::generate_impl_obj_file(compiler, out_dir, implementation);
-                commands
-                    .generated_files_paths
-                    .push(helpers::generate_impl_obj_file(
-                        compiler,
-                        out_dir,
-                        implementation,
-                    ));
-                arguments.push(Argument::from(obj_file));
+                let obj_file_path = Argument::from(helpers::generate_impl_obj_file(
+                    compiler,
+                    out_dir,
+                    implementation,
+                ));
+                commands.generated_files_paths.push(obj_file_path.clone());
+                arguments.push(obj_file_path);
 
                 implementation.dependencies.iter().for_each(|ifc_dep| {
                     arguments.push(Argument::from(format!(
@@ -383,6 +403,7 @@ mod sources {
             }
             CppCompiler::MSVC => {
                 arguments.push(Argument::from("-EHsc"));
+                arguments.push(Argument::from("/nologo"));
                 arguments.push(Argument::from("-c"));
                 arguments.push(Argument::from("-ifcSearchDir"));
                 arguments.push(Argument::from(format!(
@@ -395,12 +416,12 @@ mod sources {
                 )));
                 // The output .obj file
 
-                let obj_file = format!(
+                let obj_file = Argument::from(format!(
                     "/Fo{out_dir}/{compiler}/modules/implementations/{}",
                     implementation.filename.split('.').collect::<Vec<_>>()[0]
-                );
+                ));
                 commands.generated_files_paths.push(obj_file.clone());
-                arguments.push(Argument::from(obj_file));
+                arguments.push(obj_file);
             }
             CppCompiler::GCC => {
                 arguments.push(Argument::from("-fmodules-ts"));
@@ -526,26 +547,6 @@ mod helpers {
             "{out_dir}/{compiler}/modules/implementations/{}.o",
             implementation.filename.split('.').collect::<Vec<_>>()[0]
         )
-    }
-
-    /// Returns a tuple with the generated prebuild module interfaces and object files
-    /// paths.
-    /// Tuple.0 are BMI's paths and Tuple.1 are the generated implementation object files
-    pub(crate) fn get_bmi_and_obj_files<'a>(
-        compiler: &'a CppCompiler,
-        ifcs_args: &'a [Vec<Argument<'a>>],
-        impls_args: &'a [Vec<Argument<'a>>],
-    ) -> impl Iterator<Item = Argument<'a>> {
-        let target_ext = compiler.get_typical_bmi_extension();
-
-        ifcs_args
-            .iter()
-            .chain(impls_args)
-            .flatten()
-            .filter(move |cmd_arg| {
-                cmd_arg.value.contains(target_ext) || cmd_arg.value.ends_with(".o")
-            })
-            .map(|i| i.to_owned())
     }
 }
 
