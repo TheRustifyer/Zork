@@ -4,7 +4,7 @@
 // file.
 
 use color_eyre::Result;
-use std::path::Path;
+use std::{path::Path, rc::Rc, cell::RefCell};
 
 use crate::{
     cli::{input::CliArgs, output::{commands::{Commands, execute_command}, arguments::Argument}},
@@ -25,19 +25,31 @@ pub fn build_project<'a>(
     _cli_args: &CliArgs
 ) -> Result<()> {
     // A registry of the generated command lines
-    let mut commands = Commands::new(&model.compiler.cpp_compiler);
+    let mut commands = Rc::new(
+        RefCell::new(
+            Commands::new(&model.compiler.cpp_compiler)
+        )
+    );
 
     // Create the directory for dump the generated files
     create_output_directory(base_path, &model)?;
 
     if model.compiler.cpp_compiler == CppCompiler::GCC { // Special GCC case
-        helpers::process_gcc_system_modules(&model, &mut commands)
+        helpers::process_gcc_system_modules(&model, &mut commands.borrow_mut())
     }
 
+    // let mut binding = commands.borrow_mut();
+    // let mut binding2 = commands.borrow_mut();
     // 1st - Build the modules
-    build_modules(&model, &mut commands)?;
+    let mut binding = commands.borrow_mut();
+    // build_modules(&model, &mut *binding)?;
     // 2st - Build the executable or the tests
-    build_executable(&model, &mut commands)?;
+    // build_executable(&model, &mut binding2)?;
+
+    // execute_command(&model.compiler.cpp_compiler, &commands.borrow().sources)?;
+    // for miu in &commands.borrow().interfaces {
+    //     execute_command(commands.borrow().compiler, miu)?
+    // }
 
     Ok(())
 }
@@ -47,18 +59,12 @@ pub fn build_project<'a>(
 fn build_executable<'a>(
     model: &'a ZorkModel,
     commands: &'a mut Commands<'a>,
-) -> Result<Vec<Argument<'a>>> {
-    let mut args = Vec::new();
-
-    args.extend(sources::generate_main_command_line_args(
-        model,
-        commands,
-        &model.executable,
-    )?);
-
-    execute_command(&model.compiler.cpp_compiler, &args)?;
-
-    Ok(args)
+) -> Result<()> {
+    Ok(
+        sources::generate_main_command_line_args(
+            model, commands,&model.executable,
+        )
+    ?)
 }
 
 /// Triggers the build process for compile the declared modules in the project
@@ -66,49 +72,40 @@ fn build_executable<'a>(
 /// This function acts like a operation result processor, by running instances
 /// and parsing the obtained result, handling the flux according to the
 /// compiler responses>
-fn build_modules<'a>(model: &'a ZorkModel, commands: &mut Commands<'a>) -> Result<()> {
-    // TODO Dev todo's!
-    // Change the string types for strong types (ie, unit structs with strong typing)
-    // Also, can we check first is modules and interfaces .is_some() and then lauch this process?
+fn build_modules<'a: 'b, 'b>(model: &'a ZorkModel<'a>, commands: &'b mut Commands<'b>) -> Result<()> {
     log::info!("\n\nBuilding the module interfaces");
-    prebuild_module_interfaces(model, &model.modules.interfaces, commands);
-
-    for miu in &commands.interfaces {
-        execute_command(commands.compiler, miu)?
-    }
+    prebuild_module_interfaces(
+        model,
+        commands
+    );
 
     log::info!("\n\nBuilding the module implementations");
-    compile_module_implementations(model, &model.modules.implementations, commands);
-
-    for impls in &commands.implementations {
-        execute_command(commands.compiler, impls)?
-    }
+    compile_module_implementations(model, commands);
 
     Ok(())
 }
 
 /// Parses the configuration in order to build the BMIs declared for the project,
 /// by precompiling the module interface units
-fn prebuild_module_interfaces<'a>(
-    model: &'a ZorkModel,
-    interfaces: &'a [ModuleInterfaceModel],
-    commands: &mut Commands<'a>,
+fn prebuild_module_interfaces<'a, 'b: 'a>(
+    model: &'a ZorkModel<'b>,
+    commands: &'a  mut Commands<'b>,
 ) {
-    interfaces.iter().for_each(|module_interface| {
+    model.modules.interfaces.iter().for_each(|module_interface| {
         sources::generate_module_interfaces_args(model, module_interface, commands);
     });
 }
 
 /// Parses the configuration in order to compile the module implementation
 /// translation units declared for the project
-fn compile_module_implementations<'a>(
-    model: &'a ZorkModel,
-    impls: &'a [ModuleImplementationModel],
-    commands: &mut Commands<'a>,
+fn compile_module_implementations(
+    model: &'_ ZorkModel<'_>,
+    // impls: &'_ [ModuleImplementationModel<'_>],
+    commands: &'_ mut Commands<'_>,
 ) {
-    impls.iter().for_each(|module_impl| {
-        sources::generate_module_implementation_args(model, module_impl, commands);
-    });
+    // impls.iter().for_each(|module_impl| {
+    //     // sources::generate_module_implementation_args(model, module_impl, commands);
+    // });
 }
 
 /// Creates the directory for output the elements generated
@@ -125,10 +122,6 @@ fn compile_module_implementations<'a>(
 /// - a /cache folder, where lives the metadata cached by Zork++
 /// in order to track different aspects of the program (last time
 /// modified files, last process build time...)
-///  
-/// TODO Generate the caché process, like last time project build,
-/// and only rebuild files that is metadata contains a newer last
-/// time modified date that the last Zork++ process
 pub fn create_output_directory(base_path: &Path, model: &ZorkModel) -> Result<()> {
     let out_dir = &model.build.output_dir;
     let compiler = &model.compiler.cpp_compiler;
@@ -183,9 +176,9 @@ mod sources {
     /// holds the main function
     pub fn generate_main_command_line_args<'a>(
         model: &'a ZorkModel,
-        commands: &mut Commands<'a>,
+        commands: &'a mut Commands<'a>,
         target: &'a impl ExecutableTarget<'a>,
-    ) -> Result<Vec<Argument<'a>>> {
+    ) -> Result<()> {
         log::info!("\n\nGenerating the main command line");
 
         let compiler = &model.compiler.cpp_compiler;
@@ -273,15 +266,16 @@ mod sources {
         };
 
         target.sourceset().as_args_to(&mut arguments)?;
+        commands.sources = arguments;
 
-        Ok(arguments)
+        Ok(())
     }
 
     /// Generates the expected arguments for precompile the BMIs depending on self
-    pub fn generate_module_interfaces_args<'a>(
-        model: &'a ZorkModel,
-        interface: &'a ModuleInterfaceModel,
-        commands: &mut Commands<'a>,
+    pub fn generate_module_interfaces_args<'a: 'b, 'b>(
+        model: &'a ZorkModel<'b>,
+        interface: &'_ ModuleInterfaceModel,
+        commands: &'a mut Commands<'b>,
     ) {
         let compiler = &model.compiler.cpp_compiler;
         let base_path = model.modules.base_ifcs_dir;
@@ -363,10 +357,10 @@ mod sources {
     }
 
     /// Generates the expected arguments for compile the implementation module files
-    pub fn generate_module_implementation_args<'a>(
-        model: &'a ZorkModel,
+    pub fn generate_module_implementation_args<'a: 'b, 'b>(
+        model: &'a ZorkModel<'a>,
         implementation: &'a ModuleImplementationModel,
-        commands: &mut Commands<'a>,
+        commands: &'a mut Commands<'b>,
     ) {
         let compiler = &model.compiler.cpp_compiler;
         let base_path = model.modules.base_impls_dir;
