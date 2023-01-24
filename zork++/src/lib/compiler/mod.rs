@@ -19,13 +19,13 @@ use crate::{
 ///
 /// Whenever this process gets triggered, the files declared within the
 /// configuration file will be build
-pub fn build_project<'a>(
+pub fn build_project(
     base_path: &Path, 
-    model: &ZorkModel<'a>,
+    model: &ZorkModel<'_>,
     _cli_args: &CliArgs
 ) -> Result<()> {
     // A registry of the generated command lines
-    let mut commands = Rc::new(
+    let commands = Rc::new(
         RefCell::new(
             Commands::new(&model.compiler.cpp_compiler)
         )
@@ -38,18 +38,21 @@ pub fn build_project<'a>(
         helpers::process_gcc_system_modules(&model, &mut commands.borrow_mut())
     }
 
-    // let mut binding = commands.borrow_mut();
-    // let mut binding2 = commands.borrow_mut();
     // 1st - Build the modules
-    let mut binding = commands.borrow_mut();
-    // build_modules(&model, &mut *binding)?;
+    build_modules(&model, commands.clone())?;
     // 2st - Build the executable or the tests
-    // build_executable(&model, &mut binding2)?;
+    build_executable(&model, commands.clone())?;
 
-    // execute_command(&model.compiler.cpp_compiler, &commands.borrow().sources)?;
-    // for miu in &commands.borrow().interfaces {
-    //     execute_command(commands.borrow().compiler, miu)?
-    // }
+    // Now we can safely borrow inmutably our Rc<RefCell<<Commands<'_>>>
+    for miu in &commands.borrow().interfaces {
+        execute_command(&model.compiler.cpp_compiler, miu.as_slice())?
+    }
+
+    for impls in &commands.borrow().implementations {
+        execute_command(&model.compiler.cpp_compiler, impls)?
+    }
+
+    execute_command(&model.compiler.cpp_compiler, &commands.borrow().sources)?;
 
     Ok(())
 }
@@ -57,12 +60,12 @@ pub fn build_project<'a>(
 /// Triggers the build process for compile the source files declared for the project
 /// and the
 fn build_executable<'a>(
-    model: &'a ZorkModel,
-    commands: &'a mut Commands<'a>,
+    model: &'a ZorkModel<'_>,
+    commands: Rc<RefCell<Commands<'a>>>,
 ) -> Result<()> {
     Ok(
         sources::generate_main_command_line_args(
-            model, commands,&model.executable,
+            model, commands.clone(),&model.executable,
         )
     ?)
 }
@@ -72,40 +75,43 @@ fn build_executable<'a>(
 /// This function acts like a operation result processor, by running instances
 /// and parsing the obtained result, handling the flux according to the
 /// compiler responses>
-fn build_modules<'a: 'b, 'b>(model: &'a ZorkModel<'a>, commands: &'b mut Commands<'b>) -> Result<()> {
+fn build_modules<'a>(model: &'a ZorkModel<'_>, commands: Rc<RefCell<Commands<'a>>>) -> Result<()> {
     log::info!("\n\nBuilding the module interfaces");
     prebuild_module_interfaces(
         model,
-        commands
+        commands.clone()
     );
 
     log::info!("\n\nBuilding the module implementations");
-    compile_module_implementations(model, commands);
+    compile_module_implementations(model, commands.clone());
 
     Ok(())
 }
 
 /// Parses the configuration in order to build the BMIs declared for the project,
 /// by precompiling the module interface units
-fn prebuild_module_interfaces<'a, 'b: 'a>(
-    model: &'a ZorkModel<'b>,
-    commands: &'a  mut Commands<'b>,
+fn prebuild_module_interfaces<'a>(
+    model: &'a ZorkModel<'_>,
+    commands: Rc<RefCell<Commands<'a>>>,
 ) {
     model.modules.interfaces.iter().for_each(|module_interface| {
-        sources::generate_module_interfaces_args(model, module_interface, commands);
+        sources::generate_module_interfaces_args(
+            model,
+            module_interface,
+            commands.clone()
+        );
     });
 }
 
 /// Parses the configuration in order to compile the module implementation
 /// translation units declared for the project
-fn compile_module_implementations(
-    model: &'_ ZorkModel<'_>,
-    // impls: &'_ [ModuleImplementationModel<'_>],
-    commands: &'_ mut Commands<'_>,
+fn compile_module_implementations<'a>(
+    model: &'a ZorkModel<'_>,
+    commands: Rc<RefCell<Commands<'a>>>,
 ) {
-    // impls.iter().for_each(|module_impl| {
-    //     // sources::generate_module_implementation_args(model, module_impl, commands);
-    // });
+    model.modules.implementations.iter().for_each(|module_impl| {
+        sources::generate_module_implementation_args(model, module_impl, commands.clone());
+    });
 }
 
 /// Creates the directory for output the elements generated
@@ -159,6 +165,8 @@ pub fn create_output_directory(base_path: &Path, model: &ZorkModel) -> Result<()
 
 /// Specific operations over source files
 mod sources {
+    use std::{cell::RefCell, rc::Rc};
+
     use color_eyre::Result;
 
     use crate::{
@@ -176,7 +184,7 @@ mod sources {
     /// holds the main function
     pub fn generate_main_command_line_args<'a>(
         model: &'a ZorkModel,
-        commands: &'a mut Commands<'a>,
+        commands: Rc<RefCell<Commands<'a>>>,
         target: &'a impl ExecutableTarget<'a>,
     ) -> Result<()> {
         log::info!("\n\nGenerating the main command line");
@@ -216,8 +224,6 @@ mod sources {
                         .with_extension(constants::BINARY_EXTENSION)
                         .display()
                 )));
-
-                arguments.extend(commands.generated_files_paths.clone().into_iter());
             }
             CppCompiler::MSVC => {
                 arguments.push(Argument::from("/EHsc"));
@@ -248,7 +254,6 @@ mod sources {
                         .with_extension(constants::BINARY_EXTENSION)
                         .display()
                 )));
-                arguments.extend(commands.generated_files_paths.clone().into_iter());
             }
             CppCompiler::GCC => {
                 arguments.push(Argument::from("-fmodules-ts"));
@@ -261,21 +266,23 @@ mod sources {
                         .with_extension(constants::BINARY_EXTENSION)
                         .display()
                 )));
-                arguments.extend(commands.generated_files_paths.clone().into_iter());
             }
         };
 
+        arguments.extend(
+            commands.borrow_mut().generated_files_paths.clone().into_iter()
+        );
         target.sourceset().as_args_to(&mut arguments)?;
-        commands.sources = arguments;
+        commands.borrow_mut().sources = arguments;
 
         Ok(())
     }
 
     /// Generates the expected arguments for precompile the BMIs depending on self
-    pub fn generate_module_interfaces_args<'a: 'b, 'b>(
-        model: &'a ZorkModel<'b>,
-        interface: &'_ ModuleInterfaceModel,
-        commands: &'a mut Commands<'b>,
+    pub fn generate_module_interfaces_args<'a>(
+        model: &'a ZorkModel<'_>,
+        interface: & ModuleInterfaceModel,
+        commands: Rc<RefCell<Commands<'a>>>,
     ) {
         let compiler = &model.compiler.cpp_compiler;
         let base_path = model.modules.base_ifcs_dir;
@@ -301,7 +308,7 @@ mod sources {
                 // The output file
                 let miu_file_path =
                     Argument::from(helpers::generate_prebuild_miu(compiler, out_dir, interface));
-                commands.generated_files_paths.push(miu_file_path.clone());
+                commands.borrow_mut().generated_files_paths.push(miu_file_path.clone());
                 arguments.push(miu_file_path);
                 // The input file
                 arguments.push(Argument::from(helpers::add_input_file(
@@ -348,19 +355,19 @@ mod sources {
                 arguments.push(Argument::from("-o"));
                 let miu_file_path =
                     Argument::from(helpers::generate_prebuild_miu(compiler, out_dir, interface));
-                commands.generated_files_paths.push(miu_file_path.clone());
+                commands.borrow_mut().generated_files_paths.push(miu_file_path.clone());
                 arguments.push(miu_file_path);
             }
         }
 
-        commands.interfaces.push(arguments);
+        commands.borrow_mut().interfaces.push(arguments);
     }
 
     /// Generates the expected arguments for compile the implementation module files
-    pub fn generate_module_implementation_args<'a: 'b, 'b>(
+    pub fn generate_module_implementation_args<'a>(
         model: &'a ZorkModel<'a>,
         implementation: &'a ModuleImplementationModel,
-        commands: &'a mut Commands<'b>,
+        commands: Rc<RefCell<Commands<'a>>>,
     ) {
         let compiler = &model.compiler.cpp_compiler;
         let base_path = model.modules.base_impls_dir;
@@ -386,7 +393,7 @@ mod sources {
                     out_dir,
                     implementation,
                 ));
-                commands.generated_files_paths.push(obj_file_path.clone());
+                commands.borrow_mut().generated_files_paths.push(obj_file_path.clone());
                 arguments.push(obj_file_path);
 
                 implementation.dependencies.iter().for_each(|ifc_dep| {
@@ -435,6 +442,7 @@ mod sources {
                     .with_extension(".obj");
 
                 commands
+                    .borrow_mut()
                     .generated_files_paths
                     .push(Argument::from(obj_file_path.clone()));
                 arguments.push(Argument::from(format!("/Fo{}", obj_file_path.display())));
@@ -454,12 +462,12 @@ mod sources {
                     out_dir,
                     implementation,
                 ));
-                commands.generated_files_paths.push(obj_file_path.clone());
+                commands.borrow_mut().generated_files_paths.push(obj_file_path.clone());
                 arguments.push(obj_file_path);
             }
         }
 
-        commands.implementations.push(arguments);
+        commands.borrow_mut().implementations.push(arguments);
     }
 }
 
