@@ -84,7 +84,7 @@ pub fn save(
 pub struct ZorkCache<'a> {
     pub last_program_execution: DateTime<Utc>,
     pub compilers_metadata: CompilersMetadata,
-    pub last_generated_project_model: ProjectModel<'a>,
+    #[serde(borrow = "'a")] pub last_generated_project_model: ProjectModel<'a>,
     pub generated_commands: CachedCommands,
 }
 

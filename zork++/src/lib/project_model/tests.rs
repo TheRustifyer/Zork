@@ -7,11 +7,12 @@ use serde::{Deserialize, Serialize};
 
 use super::sourceset::SourceSet;
 
-#[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Default, Clone)]
+#[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Clone)]
 pub struct TestsModel<'a> {
     pub test_executable_name: String,
+    #[serde(borrow = "'a")]
     pub sourceset: SourceSet<'a>,
-    pub main: &'a str,
+    #[serde(borrow = "'a")] pub main: &'a Path,
     pub extra_args: Vec<Argument<'a>>,
 }
 

@@ -4,16 +4,17 @@ use serde::{Deserialize, Serialize};
 
 use crate::{bounds::TranslationUnit, config_file::modules::ModulePartition};
 
-#[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Default, Clone)]
+#[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Clone)]
 pub struct ModulesModel<'a> {
-    pub base_ifcs_dir: PathBuf, // TODO Remove them, since they're already used
+    #[serde(borrow = "'a")]
+    pub base_ifcs_dir: &'a Path, // TODO Remove them, since they're already used
     pub interfaces: Vec<ModuleInterfaceModel<'a>>,
-    pub base_impls_dir: PathBuf,
+    #[serde(borrow = "'a")] pub base_impls_dir: &'a Path,
     pub implementations: Vec<ModuleImplementationModel<'a>>,
     pub sys_modules: Vec<&'a str>,
 }
 
-#[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Default, Clone)]
+#[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Clone)]
 pub struct ModuleInterfaceModel<'a> {
     pub path: PathBuf,
     pub extension: String,

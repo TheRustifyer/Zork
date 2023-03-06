@@ -81,8 +81,8 @@ pub mod worker {
             // {
             //     build_model(&config);
             // } else { read_only_cache.project_model };
-            // let program_data = 
-            // 
+            // let program_data =
+            //
             // do_main_work_based_on_cli_input(cli_args, &program_data, cache, &read_only_cache)
             //     .with_context(|| {
             //         format!(

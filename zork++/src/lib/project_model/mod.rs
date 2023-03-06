@@ -14,12 +14,13 @@ use self::{
     project::ProjectModel, tests::TestsModel,
 };
 
-#[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Default, Clone)]
+#[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Clone)]
 pub struct ZorkModel<'a> {
+    #[serde(borrow = "'a")]
     pub project: ProjectModel<'a>,
-    pub compiler: CompilerModel<'a>,
-    pub build: BuildModel<'a>,
-    pub executable: ExecutableModel<'a>,
-    pub modules: ModulesModel<'a>,
-    pub tests: TestsModel<'a>,
+    #[serde(borrow = "'a")] pub compiler: CompilerModel<'a>,
+    #[serde(borrow = "'a")] pub build: BuildModel<'a>,
+    #[serde(borrow = "'a")] pub executable: ExecutableModel<'a>,
+    #[serde(borrow = "'a")] pub modules: ModulesModel<'a>,
+    #[serde(borrow = "'a")] pub tests: TestsModel<'a>,
 }

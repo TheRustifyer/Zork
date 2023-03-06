@@ -77,7 +77,6 @@ pub fn find_config_files(base_path: &Path) -> Result<Vec<ConfigFile>> {
 }
 
 pub fn build_model<'a>(config: &'a ZorkConfigFile) -> ZorkModel<'a> {
-    
 
     let project = assemble_project_model(&config.project);
     let compiler = assemble_compiler_model(&config.compiler);
@@ -102,7 +101,7 @@ fn assemble_project_model<'a>(config: &'a ProjectAttribute) -> ProjectModel<'a> 
         authors: config
             .authors
             .as_ref()
-            .map_or_else(|| &[] as &[&str], |auths| auths.as_slice()),
+            .map_or_else(|| Vec::with_capacity(0), |auths| auths.clone()),
         compilation_db: config.compilation_db.unwrap_or_default(),
     }
 }
@@ -123,13 +122,12 @@ fn assemble_compiler_model<'a>(config: &'a CompilerAttribute) -> CompilerModel<'
 }
 
 fn assemble_build_model<'a>(config: &'a Option<BuildAttribute>) -> BuildModel<'a> {
-    let output_dir = config
-        .as_ref()
-        .and_then(|build| build.output_dir)
-        .unwrap_or(DEFAULT_OUTPUT_DIR);
-
     BuildModel {
-        output_dir: Path::new(output_dir),
+        output_dir: config
+            .as_ref()
+            .and_then(|build| build.output_dir)
+            .unwrap_or(DEFAULT_OUTPUT_DIR)
+            .as_ref(),
     }
 }
 
@@ -214,9 +212,9 @@ fn assemble_modules_model<'a>(config: &'a Option<ModulesAttribute>) -> ModulesMo
         .map_or_else(Default::default, |headers| headers.clone());
 
     ModulesModel {
-        base_ifcs_dir: Path::new(base_ifcs_dir),
+        base_ifcs_dir: &Path::new(base_ifcs_dir),
         interfaces,
-        base_impls_dir: Path::new(base_impls_dir),
+        base_impls_dir: &Path::new( base_impls_dir),
         implementations,
         sys_modules,
     }
@@ -350,7 +348,7 @@ mod test {
         let expected = ZorkModel {
             project: ProjectModel {
                 name: "Zork++",
-                authors: &["zerodaycode.gz@gmail.com"],
+                authors: vec!["zerodaycode.gz@gmail.com"],
                 compilation_db: false,
             },
             compiler: CompilerModel {
@@ -403,7 +401,7 @@ mod test {
         let expected = ZorkModel {
             project: ProjectModel {
                 name: "Zork++",
-                authors: &["zerodaycode.gz@gmail.com"],
+                authors: vec!["zerodaycode.gz@gmail.com"],
                 compilation_db: true,
             },
             compiler: CompilerModel {

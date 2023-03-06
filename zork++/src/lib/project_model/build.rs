@@ -1,13 +1,9 @@
 use std::path::Path;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Default, Clone)]
+#[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Clone)]
 pub struct BuildModel<'a> {
-    pub output_dir: &'a str,
+    #[serde(borrow = "'a")]
+    pub output_dir: &'a Path,
 }
 
-impl<'a> BuildModel<'a> {
-    pub fn to_path(&self) -> &Path {
-        Path::new(self.output_dir)
-    }
-}

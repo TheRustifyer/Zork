@@ -6,12 +6,12 @@ use serde::{Deserialize, Serialize};
 use std::path::Path;
 use super::sourceset::SourceSet;
 
-#[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Default, Clone)]
+#[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Clone)]
 pub struct ExecutableModel<'a> {
     pub executable_name: &'a str,
     #[serde(borrow = "'a")]
     pub sourceset: SourceSet<'a>,
-    pub main: &'a Path,
+    #[serde(borrow = "'a")] pub main: &'a Path,
     pub extra_args: Vec<Argument<'a>>,
 }
 
@@ -25,7 +25,6 @@ impl<'a> ExecutableTarget<'a> for ExecutableModel<'a> {
     fn name(&'a self) -> &'a str {
         self.executable_name
     }
-
     fn sourceset(&'a self) -> &'a SourceSet<'a> {
         &self.sourceset
     }

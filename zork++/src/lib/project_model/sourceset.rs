@@ -8,7 +8,7 @@ use crate::cli::output::arguments::Argument;
 #[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Clone)]
 pub enum Source<'a> {
     #[serde(borrow = "'a")]
-    File(&'a str),
+    File(&'a Path),
     Glob(GlobPattern<'a>),
 }
 
@@ -34,10 +34,10 @@ impl<'a> GlobPattern<'a> {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Default, Clone)]
+#[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Clone)]
 pub struct SourceSet<'a> {
     #[serde(borrow = "'a")]
-    pub base_path: &'a str,
+    pub base_path: &'a Path,
     pub sources: Vec<Source<'a>>,
 }
 
