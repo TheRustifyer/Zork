@@ -1,12 +1,14 @@
 use std::path::{Path, PathBuf};
 
 use color_eyre::{eyre::Context, Result};
+use serde::{Deserialize, Serialize};
 
 use crate::cli::output::arguments::Argument;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Clone)]
 pub enum Source<'a> {
-    File(&'a Path),
+    #[serde(borrow = "'a")]
+    File(&'a str),
     Glob(GlobPattern<'a>),
 }
 
@@ -14,13 +16,13 @@ impl<'a> Source<'a> {
     #[inline(always)]
     pub fn paths(&self) -> Result<Vec<PathBuf>> {
         match self {
-            Source::File(file) => Ok(vec![file.to_path_buf()]),
+            Source::File(file) => Ok(vec![PathBuf::from(file)]),
             Source::Glob(pattern) => pattern.resolve(),
         }
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Default, Clone)]
 pub struct GlobPattern<'a>(pub &'a str);
 
 impl<'a> GlobPattern<'a> {
@@ -32,9 +34,10 @@ impl<'a> GlobPattern<'a> {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Default, Clone)]
 pub struct SourceSet<'a> {
-    pub base_path: &'a Path,
+    #[serde(borrow = "'a")]
+    pub base_path: &'a str,
     pub sources: Vec<Source<'a>>,
 }
 
@@ -45,7 +48,7 @@ impl<'a> SourceSet<'a> {
         let paths = paths?
             .into_iter()
             .flatten()
-            .map(|path| self.base_path.join(path))
+            .map(|path| Path::new(self.base_path).join(path))
             .map(Argument::from);
 
         dst.extend(paths);

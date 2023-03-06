@@ -2,13 +2,14 @@ use crate::{
     bounds::{ExecutableTarget, ExtraArgs},
     cli::output::arguments::Argument,
 };
+use serde::{Deserialize, Serialize};
 use std::path::Path;
-
 use super::sourceset::SourceSet;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Default, Clone)]
 pub struct ExecutableModel<'a> {
     pub executable_name: &'a str,
+    #[serde(borrow = "'a")]
     pub sourceset: SourceSet<'a>,
     pub main: &'a Path,
     pub extra_args: Vec<Argument<'a>>,

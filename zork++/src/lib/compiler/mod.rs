@@ -6,6 +6,9 @@
 use color_eyre::Result;
 use std::path::Path;
 
+use crate::bounds::TranslationUnit;
+use crate::cli::output::commands::{CommandExecutionResult, ModuleCommandLine};
+use crate::compiler::helpers::flag_modules_without_changes;
 use crate::{
     cache::ZorkCache,
     cli::output::{arguments::Argument, commands::Commands},
@@ -15,9 +18,6 @@ use crate::{
         ZorkModel,
     },
 };
-use crate::bounds::TranslationUnit;
-use crate::cli::output::commands::{CommandExecutionResult, ModuleCommandLine};
-use crate::compiler::helpers::flag_modules_without_changes;
 
 /// The entry point of the compilation process
 ///
@@ -140,7 +140,6 @@ mod sources {
     use super::helpers;
     use crate::{
         bounds::{ExecutableTarget, TranslationUnit},
-        cache::ZorkCache,
         cli::output::{
             arguments::{clang_args, Argument},
             commands::{CommandExecutionResult, Commands, ModuleCommandLine},
@@ -153,7 +152,6 @@ mod sources {
         utils::constants,
     };
     use color_eyre::Result;
-    use std::path::Path;
 
     /// Generates the command line arguments for non-module source files, including the one that
     /// holds the main function
@@ -354,7 +352,7 @@ mod sources {
         }
 
         let command_line = ModuleCommandLine {
-            path: interface.file().to_path_buf(),
+            path: interface.file(),
             args: arguments,
             processed: false,
             execution_result: CommandExecutionResult::default(),
@@ -469,6 +467,7 @@ mod helpers {
         cli::output::commands::{CommandExecutionResult, ModuleCommandLine},
     };
     use std::path::PathBuf;
+    use crate::utils::fs;
 
     /// Creates the path for a prebuilt module interface, based on the default expected
     /// extension for BMI's given a compiler
@@ -512,7 +511,9 @@ mod helpers {
                 "{mod_unit}.{}",
                 if compiler.eq(&CppCompiler::MSVC) {
                     compiler.get_obj_file_extension()
-                } else { compiler.get_typical_bmi_extension() }
+                } else {
+                    compiler.get_typical_bmi_extension()
+                }
             ))
     }
 
@@ -604,7 +605,11 @@ mod helpers {
     /// hasn't been modified since the last build process iteration.
     ///
     /// True means already processed and previous iteration Success
-    pub(crate) fn flag_modules_without_changes(compiler: &CppCompiler, cache: &ZorkCache, file: &Path) -> bool {
+    pub(crate) fn flag_modules_without_changes(
+        compiler: &CppCompiler,
+        cache: &ZorkCache,
+        file: &Path,
+    ) -> bool {
         if compiler.eq(&CppCompiler::CLANG) {
             log::trace!("Module unit {file:?} will be rebuilt since we've detected that you are using Clang");
         }
@@ -621,21 +626,7 @@ mod helpers {
             };
 
             // If exists and was successful, let's see if has been modified after the program last iteration
-            let last_process_timestamp = cache.last_program_execution;
-            let file_metadata = file.metadata();
-            match file_metadata {
-                Ok(m) => match m.modified() {
-                    Ok(modified) => DateTime::<Utc>::from(modified) < last_process_timestamp,
-                    Err(e) => {
-                        log::error!("An error happened trying to get the last time that the {file:?} was modified. Processing it anyway because {e:?}");
-                        false
-                    }
-                },
-                Err(e) => {
-                    log::error!("An error happened trying to retrieve the metadata of {file:?}. Processing it anyway because {e:?}");
-                    false
-                }
-            }
+            fs::did_file_changed_since_last_run(cache, file).unwrap_or(false)
         } else {
             false
         }

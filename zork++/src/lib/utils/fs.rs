@@ -1,12 +1,14 @@
-use std::{env, fs::{DirBuilder, File}, fs, io::{BufReader, Write}, path::Path};
-use std::path::PathBuf;
-
-use color_eyre::{eyre::Context, Result};
-use color_eyre::eyre::ContextCompat;
-use color_eyre::owo_colors::OwoColorize;
-use serde::{Deserialize, Serialize};
-
 use super::constants;
+use color_eyre::{eyre::Context, Result};
+use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
+use std::{
+    fs::{DirBuilder, File},
+    io::{BufReader, Write},
+    path::Path,
+};
+use chrono::{DateTime, Utc};
+use crate::cache::ZorkCache;
 
 pub fn create_file<'a>(path: &Path, filename: &'a str, buff_write: &'a [u8]) -> Result<()> {
     let file_path = path.join(filename);
@@ -26,21 +28,58 @@ pub fn create_directory(path_create: &Path) -> Result<()> {
 
 /// Gets the absolute route for an element in the system given a path P,
 /// without the extension is P belongs to a file
-pub fn get_absolute_path<P: AsRef<Path>>(p: P) -> Result<PathBuf> {
-    let mut canonical = p.as_ref().canonicalize().with_context(|| format!("Error getting the canonical path for: {:?}", p.as_ref()))?;
+pub fn get_absolute_path<P: AsRef<Path>>(p: P) -> PathBuf {
+    let mut canonical = p
+        .as_ref()
+        .canonicalize()
+        .unwrap_or_else(|_| PathBuf::from(p.as_ref()));
     if cfg!(target_os = "windows") {
-        canonical = canonical.to_str().map(|unc| &unc[4..]).unwrap_or_default().into()
+        canonical = canonical
+            .to_str()
+            .map(|unc| &unc[4..])
+            .unwrap_or_default()
+            .into()
     }
-    let file_stem = canonical.file_stem().with_context(|| format!("Unable to get the file stem for {:?}", p.as_ref()))?;
-    let r = Ok(canonical.parent().unwrap_or_else(|| panic!("Unexpected error getting the parent of {:?}", p.as_ref())).join(file_stem));
-    println!("Generated file: {:?}, file stem: {file_stem:?}, and canonical: {canonical:?}", &r);
+    let file_stem = canonical.file_stem().unwrap_or_default();
+    let r = canonical
+        .parent()
+        .unwrap_or_else(|| panic!("Unexpected error getting the parent of {:?}", p.as_ref()))
+        .join(file_stem);
+    log::trace!(
+        "Generated file: {:?}, file stem: {file_stem:?}, and canonical: {canonical:?}",
+        &r
+    );
     r
+}
+
+/// Returns true if the file changed since the last time that Zork++ made a build process,
+/// false otherwise.
+pub fn did_file_changed_since_last_run(cache: &ZorkCache, file: &Path) -> Option<bool> {
+    let last_process_timestamp = cache.last_program_execution;
+    let file_metadata = file.metadata();
+    match file_metadata {
+        Ok(m) => match m.modified() {
+            Ok(modified) => Some(DateTime::<Utc>::from(modified) < last_process_timestamp),
+            Err(e) => {
+                log::error!("An error happened trying to get the last time that the {file:?} was modified. Processing it anyway because {e:?}");
+                None
+            }
+        },
+        Err(e) => {
+            log::error!("An error happened trying to retrieve the metadata of {file:?}. Processing it anyway because {e:?}");
+            None
+        }
+    }
 }
 
 /// Returns the declared extension for a file, if exists
 #[inline(always)]
 pub fn get_file_extension<P: AsRef<Path>>(p: P) -> String {
-    p.as_ref().extension().and_then(|ext| ext.to_str()).unwrap_or_default().to_string()
+    p.as_ref()
+        .extension()
+        .and_then(|ext| ext.to_str())
+        .unwrap_or_default()
+        .to_string()
 }
 
 pub fn serialize_object_to_file<T>(path: &Path, data: &T) -> Result<()>

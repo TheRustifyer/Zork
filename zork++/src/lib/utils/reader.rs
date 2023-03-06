@@ -1,23 +1,28 @@
-use crate::{cli::output::arguments::Argument, config_file::{
-    build::BuildAttribute,
-    compiler::CompilerAttribute,
-    executable::ExecutableAttribute,
-    modules::{ModuleImplementation, ModuleInterface, ModulesAttribute},
-    project::ProjectAttribute,
-    tests::TestsAttribute,
-    ZorkConfigFile,
-}, project_model::{
-    build::BuildModel,
-    compiler::CompilerModel,
-    executable::ExecutableModel,
-    modules::{
-        ModuleImplementationModel, ModuleInterfaceModel, ModulePartitionModel, ModulesModel,
+use crate::{
+    cli::output::arguments::Argument,
+    config_file::{
+        build::BuildAttribute,
+        compiler::CompilerAttribute,
+        executable::ExecutableAttribute,
+        modules::{ModuleImplementation, ModuleInterface, ModulesAttribute},
+        project::ProjectAttribute,
+        tests::TestsAttribute,
+        ZorkConfigFile,
     },
-    project::ProjectModel,
-    sourceset::{GlobPattern, Source, SourceSet},
-    tests::TestsModel,
-    ZorkModel,
-}, utils};
+    project_model::{
+        build::BuildModel,
+        compiler::CompilerModel,
+        executable::ExecutableModel,
+        modules::{
+            ModuleImplementationModel, ModuleInterfaceModel, ModulePartitionModel, ModulesModel,
+        },
+        project::ProjectModel,
+        sourceset::{GlobPattern, Source, SourceSet},
+        tests::TestsModel,
+        ZorkModel,
+    },
+    utils,
+};
 use color_eyre::{eyre::eyre, Result};
 use std::path::{Path, PathBuf};
 use walkdir::{DirEntry, WalkDir};
@@ -72,6 +77,8 @@ pub fn find_config_files(base_path: &Path) -> Result<Vec<ConfigFile>> {
 }
 
 pub fn build_model<'a>(config: &'a ZorkConfigFile) -> ZorkModel<'a> {
+    
+
     let project = assemble_project_model(&config.project);
     let compiler = assemble_compiler_model(&config.compiler);
     let build = assemble_build_model(&config.build);
@@ -217,7 +224,7 @@ fn assemble_modules_model<'a>(config: &'a Option<ModulesAttribute>) -> ModulesMo
 
 fn assemble_module_interface_model<'a>(
     config: &'a ModuleInterface,
-    base_path: &str
+    base_path: &str,
 ) -> ModuleInterfaceModel<'a> {
     let file_path = Path::new(base_path).join(config.file);
     let module_name = config.module_name.unwrap_or_else(|| {
@@ -238,7 +245,7 @@ fn assemble_module_interface_model<'a>(
     };
 
     ModuleInterfaceModel {
-        path: utils::fs::get_absolute_path(&file_path).expect("TODO Propagate error on get path"),
+        path: utils::fs::get_absolute_path(&file_path),
         extension: utils::fs::get_file_extension(&file_path),
         module_name,
         partition,
@@ -263,7 +270,7 @@ fn assemble_module_implementation_model<'a>(
     }
 
     ModuleImplementationModel {
-        path: utils::fs::get_absolute_path(&file_path).expect("TODO Propagate error on get path impl"),
+        path: utils::fs::get_absolute_path(&file_path),
         extension: utils::fs::get_file_extension(&file_path),
         dependencies,
     }
@@ -317,11 +324,11 @@ fn assemble_tests_model<'a>(
 
 #[cfg(test)]
 mod test {
-    use std::env;
     use crate::{
         project_model::compiler::{CppCompiler, LanguageLevel, StdLib},
         utils,
     };
+    use std::env;
 
     use super::*;
 

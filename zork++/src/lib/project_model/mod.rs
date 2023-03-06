@@ -7,13 +7,14 @@ pub mod sourceset;
 pub mod tests;
 
 use std::fmt::Debug;
+use serde::{Deserialize, Serialize};
 
 use self::{
     build::BuildModel, compiler::CompilerModel, executable::ExecutableModel, modules::ModulesModel,
     project::ProjectModel, tests::TestsModel,
 };
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Default, Clone)]
 pub struct ZorkModel<'a> {
     pub project: ProjectModel<'a>,
     pub compiler: CompilerModel<'a>,

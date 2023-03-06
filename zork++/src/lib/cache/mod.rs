@@ -10,34 +10,43 @@ use std::{
 use walkdir::WalkDir;
 
 use crate::utils::constants::COMPILATION_DATABASE;
-use crate::{
-    cli::{
-        input::CliArgs,
-        output::commands::{CommandExecutionResult, Commands, ModuleCommandLine},
-    },
-    project_model::{compiler::CppCompiler, ZorkModel},
-    utils::{
-        self,
-        constants::{self, GCC_CACHE_DIR},
-    },
-};
+use crate::{cli::{
+    input::CliArgs,
+    output::commands::{CommandExecutionResult, Commands, ModuleCommandLine},
+}, project_model::{compiler::CppCompiler, ZorkModel}, project_model, utils::{
+    self,
+    constants::{self, GCC_CACHE_DIR},
+}};
 use serde::{Deserialize, Serialize};
+use crate::cli::output::arguments::Argument;
+use crate::config_file::ZorkConfigFile;
+use crate::project_model::project::ProjectModel;
+use crate::project_model::sourceset::SourceSet;
 
 /// Standalone utility for retrieve the Zork++ cache file
-pub fn load(program_data: &ZorkModel<'_>, cli_args: &CliArgs) -> Result<ZorkCache> {
-    let compiler = program_data.compiler.cpp_compiler.as_ref();
-    let cache_path = &Path::new(program_data.build.output_dir)
+pub fn load<'a>(config: &ZorkConfigFile<'_>, cli_args: &CliArgs) -> Result<ZorkCache<'a>> {
+    let compiler = project_model::compiler::CppCompiler::from(
+        &config.compiler.cpp_compiler
+    );
+    let out_dir = Path::new(
+        config
+            .build
+            .as_ref()
+            .and_then(|build_attr| build_attr.output_dir)
+            .unwrap_or_default()
+    );
+    let cache_path = &Path::new(out_dir)
         .join("zork")
         .join("cache")
-        .join(compiler);
+        .join(compiler.as_ref());
 
     let cache_file_path = cache_path.join(constants::ZORK_CACHE_FILENAME);
 
     if !Path::new(&cache_file_path).exists() {
         File::create(cache_file_path).with_context(|| "Error creating the cache file")?;
     } else if Path::new(cache_path).exists() && cli_args.clear_cache {
-        std::fs::remove_dir_all(cache_path).with_context(|| "Error cleaning the Zork++ cache")?;
-        std::fs::create_dir(cache_path)
+        fs::remove_dir_all(cache_path).with_context(|| "Error cleaning the Zork++ cache")?;
+        fs::create_dir(cache_path)
             .with_context(|| "Error creating the cache subdir for {compiler}")?;
         File::create(cache_file_path)
             .with_context(|| "Error creating the cache file after cleaning the cache")?;
@@ -46,7 +55,7 @@ pub fn load(program_data: &ZorkModel<'_>, cli_args: &CliArgs) -> Result<ZorkCach
     let mut cache: ZorkCache = utils::fs::load_and_deserialize(&cache_path)
         .with_context(|| "Error loading the Zork++ cache")?;
 
-    cache.run_tasks(program_data);
+    cache.run_tasks(compiler, out_dir, config);
 
     Ok(cache)
 }
@@ -72,13 +81,14 @@ pub fn save(
 }
 
 #[derive(Deserialize, Serialize, Debug, Default, Clone)]
-pub struct ZorkCache {
+pub struct ZorkCache<'a> {
     pub last_program_execution: DateTime<Utc>,
     pub compilers_metadata: CompilersMetadata,
+    pub last_generated_project_model: ProjectModel<'a>,
     pub generated_commands: CachedCommands,
 }
 
-impl ZorkCache {
+impl<'a> ZorkCache<'a> {
     /// Returns a [`Option`] of [`CommandDetails`] if the file is persisted already in the cache
     pub fn is_file_cached(&self, path: &Path) -> Option<&CommandDetail> {
         let last_iteration_details = self.generated_commands.details.last();
@@ -107,13 +117,17 @@ impl ZorkCache {
     }
 
     /// The tasks associated with the cache after load it from the file system
-    pub fn run_tasks(&mut self, program_data: &ZorkModel<'_>) {
-        let compiler = program_data.compiler.cpp_compiler;
+    pub fn run_tasks(
+        &mut self,
+        compiler: CppCompiler,
+        out_dir: &Path,
+        config: &ZorkConfigFile<'_>
+    ) {
         if cfg!(target_os = "windows") && compiler == CppCompiler::MSVC {
             self.load_msvc_metadata()
         }
         if compiler != CppCompiler::MSVC {
-            let i = Self::track_system_modules(program_data);
+            let i = Self::track_system_modules(compiler, out_dir, config);
             self.compilers_metadata.system_modules.clear();
             self.compilers_metadata.system_modules.extend(i);
         }
@@ -126,7 +140,7 @@ impl ZorkCache {
         commands: Commands<'_>,
         test_mode: bool,
     ) -> Result<()> {
-        self.save_generated_commands(&commands);
+        self.save_generated_commands_and_execution_status(&commands);
         if program_data.project.compilation_db {
             map_generated_commands_to_compilation_db(program_data, &commands, test_mode)?;
         }
@@ -143,8 +157,10 @@ impl ZorkCache {
         Ok(())
     }
 
-    fn save_generated_commands(&mut self, commands: &Commands<'_>) {
-        log::trace!("Storing in the cache the last generated command lines...");
+    fn save_generated_commands_and_execution_status(&mut self, commands: &Commands<'_>) {
+        log::trace!(
+            "Storing in the cache the last generated command lines and execution results..."
+        );
         self.generated_commands.compiler = commands.compiler;
         let process_no = if !self.generated_commands.details.is_empty() {
             self.generated_commands
@@ -229,15 +245,15 @@ impl ZorkCache {
 
     /// Looks for the already precompiled `GCC` or `Clang` system headers,
     /// to avoid recompiling them on every process
-    fn track_system_modules<'a>(
-        program_data: &'a ZorkModel<'_>,
-    ) -> impl Iterator<Item = String> + 'a {
-        let root = if program_data.compiler.cpp_compiler == CppCompiler::GCC {
+    fn track_system_modules<'b>(
+        compiler: CppCompiler,
+        out_dir: &Path,
+        config: &'b ZorkConfigFile<'b>
+    ) -> impl Iterator<Item = String> + 'b {
+        let root = if compiler == CppCompiler::GCC {
             Path::new(GCC_CACHE_DIR).to_path_buf()
         } else {
-            program_data
-                .build
-                .output_dir
+            out_dir
                 .join("clang")
                 .join("modules")
                 .join("interfaces")
@@ -252,9 +268,11 @@ impl ZorkCache {
                     .expect("Error retrieving metadata")
                     .is_file()
                 {
-                    program_data
+                    config
                         .modules
-                        .sys_modules
+                        .as_ref()
+                        .and_then(|mods| mods.sys_modules.as_ref())
+                        .unwrap_or(&Vec::with_capacity(0))
                         .iter()
                         .any(|sys_mod| file.file_name().to_str().unwrap().starts_with(sys_mod))
                 } else {

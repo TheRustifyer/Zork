@@ -1,8 +1,8 @@
 //! Types and procedures that represents a command line argument,
 //! or collections of command line arguments
 
-use std::{borrow::Borrow, ffi::OsStr, path::PathBuf};
 use std::path::Path;
+use std::{borrow::Borrow, ffi::OsStr, path::PathBuf};
 
 use serde::{Deserialize, Serialize};
 

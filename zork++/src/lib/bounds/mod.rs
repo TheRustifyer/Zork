@@ -1,5 +1,5 @@
 use core::fmt::Debug;
-use std::{fmt::Display, path::Path};
+use std::fmt::Display;
 use std::path::PathBuf;
 
 use crate::{cli::output::arguments::Argument, project_model::sourceset::SourceSet};
@@ -41,4 +41,3 @@ pub trait TranslationUnit: Display + Debug {
             .to_string()
     }
 }
-

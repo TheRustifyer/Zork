@@ -23,6 +23,7 @@ pub mod worker {
         },
         compiler::build_project,
         config_file::ZorkConfigFile,
+        project_model,
         project_model::{compiler::CppCompiler, ZorkModel},
         utils::{
             self,
@@ -53,9 +54,9 @@ pub mod worker {
             log::debug!(
                 "Launching a Zork++ work event for the configuration file: {:?}, located at: {:?}\n",
                 config_file.dir_entry.file_name(),
-                config_file.path
+                &config_file.path
             );
-            let raw_file = fs::read_to_string(config_file.path)
+            let raw_file = fs::read_to_string(&config_file.path)
                 .with_context(|| {
                     format!(
                         "An error happened parsing the configuration file: {:?}",
@@ -66,21 +67,29 @@ pub mod worker {
 
             let config: ZorkConfigFile = toml::from_str(raw_file.as_str())
                 .with_context(|| "Could not parse configuration file")?;
-            let program_data = build_model(&config);
-            create_output_directory(&program_data)?;
+            create_output_directory(&config)?;
 
-            let cache = cache::load(&program_data, cli_args)
-                .with_context(|| "Unable to load the Zork++ caché")?;
+            let cache = cache::load(&config, cli_args)
+                .with_context(|| "Unable to load the Zork++ cache")?;
+            // TODO Change ro cache for RC
             let read_only_cache = cache.clone();
 
-            // let generated_commands =
-            do_main_work_based_on_cli_input(cli_args, &program_data, cache, &read_only_cache)
-                .with_context(|| {
-                    format!(
-                        "Failed to build the project for the config file: {:?}",
-                        config_file.dir_entry.file_name()
-                    )
-                })?;
+            // // TODO If the config file changed since the prev iteration, we must reload the project
+            // // model, otherwise, we can load it from cache
+            // let program_data = if utils::fs::did_file_changed_since_last_run(&read_only_cache, &config_file.path)
+            //     .unwrap_or(false)
+            // {
+            //     build_model(&config);
+            // } else { read_only_cache.project_model };
+            // let program_data = 
+            // 
+            // do_main_work_based_on_cli_input(cli_args, &program_data, cache, &read_only_cache)
+            //     .with_context(|| {
+            //         format!(
+            //             "Failed to build the project for the config file: {:?}",
+            //             config_file.dir_entry.file_name()
+            //         )
+            //     })?;
         }
 
         Ok(())
@@ -150,9 +159,15 @@ pub mod worker {
     /// - a /cache folder, where lives the metadata cached by Zork++
     /// in order to track different aspects of the program (last time
     /// modified files, last process build time...)
-    fn create_output_directory(model: &ZorkModel) -> Result<()> {
-        let out_dir = model.build.output_dir;
-        let compiler = &model.compiler.cpp_compiler;
+    fn create_output_directory(config: &ZorkConfigFile) -> Result<()> {
+        let out_dir = Path::new(
+            config
+                .build
+                .as_ref()
+                .and_then(|build_attr| build_attr.output_dir)
+                .unwrap_or("."),
+        );
+        let compiler = project_model::compiler::CppCompiler::from(&config.compiler.cpp_compiler);
 
         // Recursively create a directory and all of its parent components if they are missing
         let modules_path = Path::new(out_dir)
@@ -164,7 +179,7 @@ pub mod worker {
 
         utils::fs::create_directory(&modules_path.join("interfaces"))?;
         utils::fs::create_directory(&modules_path.join("implementations"))?;
-        utils::fs::create_directory(&zork_cache_path.join(model.compiler.cpp_compiler.as_ref()))?;
+        utils::fs::create_directory(&zork_cache_path.join(compiler.as_ref()))?;
         utils::fs::create_directory(&zork_intrinsics_path)?;
 
         // TODO This possibly would be temporary
@@ -190,7 +205,7 @@ pub mod worker {
         use tempfile::tempdir;
 
         use crate::config_file::ZorkConfigFile;
-        use crate::utils::{reader::build_model, template::resources::CONFIG_FILE};
+        use crate::utils::template::resources::CONFIG_FILE;
 
         #[test]
         fn test_creation_directories() -> Result<()> {
@@ -201,10 +216,9 @@ pub mod worker {
                 .replace("<compiler>", "clang")
                 .replace('\\', "/");
             let zcf: ZorkConfigFile = toml::from_str(&normalized_cfg_file)?;
-            let model = build_model(&zcf);
 
             // This should create and out/ directory in the ./zork++ folder at the root of this project
-            super::create_output_directory(&model)?;
+            super::create_output_directory(&zcf)?;
 
             assert!(temp.path().join("out").exists());
             assert!(temp.path().join("out/zork").exists());
