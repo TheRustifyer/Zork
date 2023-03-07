@@ -12,6 +12,11 @@ pub struct Argument<'a> {
     pub value: &'a str,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ArgumentOwned {
+    pub value: String,
+}
+
 impl<'a> From<&'a str> for Argument<'a> {
     fn from(value: &'a str) -> Self {
         Self { value }

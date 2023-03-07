@@ -2,8 +2,10 @@ use crate::{
     bounds::{ExecutableTarget, ExtraArgs},
     cli::output::arguments::Argument,
 };
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
+use crate::cli::output::arguments::ArgumentOwned;
+use crate::project_model::sourceset::SourceSetOwned;
 
 use super::sourceset::SourceSet;
 
@@ -14,6 +16,14 @@ pub struct TestsModel<'a> {
     pub sourceset: SourceSet<'a>,
     #[serde(borrow = "'a")] pub main: &'a Path,
     pub extra_args: Vec<Argument<'a>>,
+}
+
+#[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Clone)]
+pub struct TestsModelOwned {
+    pub test_executable_name: String,
+    pub sourceset: SourceSetOwned,
+    pub main: PathBuf,
+    pub extra_args: Vec<ArgumentOwned>,
 }
 
 impl<'a> ExtraArgs<'a> for TestsModel<'a> {

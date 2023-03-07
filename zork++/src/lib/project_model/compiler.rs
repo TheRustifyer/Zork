@@ -3,6 +3,7 @@ use core::fmt;
 use serde::{Deserialize, Serialize};
 
 use crate::{bounds::ExtraArgs, cli::output::arguments::Argument, config_file};
+use crate::cli::output::arguments::ArgumentOwned;
 
 #[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Default, Clone)]
 pub struct CompilerModel<'a> {
@@ -11,6 +12,14 @@ pub struct CompilerModel<'a> {
     pub std_lib: Option<StdLib>,
     #[serde(borrow = "'a")]
     pub extra_args: Vec<Argument<'a>>,
+}
+
+#[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Default, Clone)]
+pub struct CompilerModelOwned {
+    pub cpp_compiler: CppCompiler,
+    pub cpp_standard: LanguageLevel,
+    pub std_lib: Option<StdLib>,
+    pub extra_args: Vec<ArgumentOwned>,
 }
 
 impl<'a> CompilerModel<'a> {

@@ -7,6 +7,7 @@ use std::{
     fs::File,
     path::{Path, PathBuf},
 };
+
 use walkdir::WalkDir;
 
 use crate::utils::constants::COMPILATION_DATABASE;
@@ -18,13 +19,12 @@ use crate::{cli::{
     constants::{self, GCC_CACHE_DIR},
 }};
 use serde::{Deserialize, Serialize};
-use crate::cli::output::arguments::Argument;
+use utils::fs::load_and_deserialize;
 use crate::config_file::ZorkConfigFile;
-use crate::project_model::project::ProjectModel;
-use crate::project_model::sourceset::SourceSet;
+use crate::project_model::project::ProjectModelOwned;
 
 /// Standalone utility for retrieve the Zork++ cache file
-pub fn load<'a>(config: &ZorkConfigFile<'_>, cli_args: &CliArgs) -> Result<ZorkCache<'a>> {
+pub fn load(config: &ZorkConfigFile<'_>, cli_args: &CliArgs) -> Result<ZorkCache> {
     let compiler = project_model::compiler::CppCompiler::from(
         &config.compiler.cpp_compiler
     );
@@ -52,12 +52,12 @@ pub fn load<'a>(config: &ZorkConfigFile<'_>, cli_args: &CliArgs) -> Result<ZorkC
             .with_context(|| "Error creating the cache file after cleaning the cache")?;
     }
 
-    let mut cache: ZorkCache = utils::fs::load_and_deserialize(&cache_path)
+    let mut cache: ZorkCache = load_and_deserialize(&cache_path)
         .with_context(|| "Error loading the Zork++ cache")?;
 
     cache.run_tasks(compiler, out_dir, config);
 
-    Ok(cache)
+    Ok(cache.to_owned())
 }
 
 /// Standalone utility for persist the cache to the file system
@@ -81,14 +81,15 @@ pub fn save(
 }
 
 #[derive(Deserialize, Serialize, Debug, Default, Clone)]
-pub struct ZorkCache<'a> {
+// #[serde(bound(deserialize = "'de: 'a"))]
+pub struct ZorkCache {
     pub last_program_execution: DateTime<Utc>,
     pub compilers_metadata: CompilersMetadata,
-    #[serde(borrow = "'a")] pub last_generated_project_model: ProjectModel<'a>,
+    pub last_generated_project_model: ProjectModelOwned,
     pub generated_commands: CachedCommands,
 }
 
-impl<'a> ZorkCache<'a> {
+impl ZorkCache {
     /// Returns a [`Option`] of [`CommandDetails`] if the file is persisted already in the cache
     pub fn is_file_cached(&self, path: &Path) -> Option<&CommandDetail> {
         let last_iteration_details = self.generated_commands.details.last();

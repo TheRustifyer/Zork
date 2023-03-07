@@ -12,6 +12,12 @@ pub enum Source<'a> {
     Glob(GlobPattern<'a>),
 }
 
+#[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Clone)]
+pub enum SourceOwned {
+    File(PathBuf),
+    Glob(GlobPatternOwned),
+}
+
 impl<'a> Source<'a> {
     #[inline(always)]
     pub fn paths(&self) -> Result<Vec<PathBuf>> {
@@ -24,6 +30,8 @@ impl<'a> Source<'a> {
 
 #[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Default, Clone)]
 pub struct GlobPattern<'a>(pub &'a str);
+#[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Default, Clone)]
+pub struct GlobPatternOwned(pub String);
 
 impl<'a> GlobPattern<'a> {
     #[inline(always)]
@@ -39,6 +47,12 @@ pub struct SourceSet<'a> {
     #[serde(borrow = "'a")]
     pub base_path: &'a Path,
     pub sources: Vec<Source<'a>>,
+}
+
+#[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Clone)]
+pub struct SourceSetOwned {
+    pub base_path: PathBuf,
+    pub sources: Vec<SourceOwned>,
 }
 
 impl<'a> SourceSet<'a> {

@@ -3,7 +3,8 @@ use crate::{
     cli::output::arguments::Argument,
 };
 use serde::{Deserialize, Serialize};
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use crate::cli::output::arguments::ArgumentOwned;
 use super::sourceset::SourceSet;
 
 #[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Clone)]
@@ -28,4 +29,12 @@ impl<'a> ExecutableTarget<'a> for ExecutableModel<'a> {
     fn sourceset(&'a self) -> &'a SourceSet<'a> {
         &self.sourceset
     }
+}
+
+#[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Clone)]
+pub struct ExecutableModelOwned {
+    pub executable_name: String,
+    pub sourceset: SourceSetOwned,
+    pub main: PathBuf,
+    pub extra_args: Vec<ArgumentOwned>,
 }

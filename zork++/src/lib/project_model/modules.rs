@@ -15,12 +15,30 @@ pub struct ModulesModel<'a> {
 }
 
 #[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Clone)]
+pub struct ModulesModelOwned {
+    pub base_ifcs_dir: PathBuf,
+    pub interfaces: Vec<ModuleInterfaceModelOwned>,
+    pub base_impls_dir: PathBuf,
+    pub implementations: Vec<ModuleImplementationModelOwned>,
+    pub sys_modules: Vec<String>,
+}
+
+#[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Clone)]
 pub struct ModuleInterfaceModel<'a> {
     pub path: PathBuf,
     pub extension: String,
     pub module_name: &'a str,
     pub partition: Option<ModulePartitionModel<'a>>,
     pub dependencies: Vec<&'a str>,
+}
+
+#[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Clone)]
+pub struct ModuleInterfaceModelOwned {
+    pub path: PathBuf,
+    pub extension: String,
+    pub module_name: String,
+    pub partition: Option<ModulePartitionModelOwned>,
+    pub dependencies: Vec<String>,
 }
 
 impl<'a> fmt::Display for ModuleInterfaceModel<'a> {
@@ -67,6 +85,13 @@ pub struct ModulePartitionModel<'a> {
     pub is_internal_partition: bool,
 }
 
+#[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Default, Clone)]
+pub struct ModulePartitionModelOwned {
+    pub module: String,
+    pub partition_name: String,
+    pub is_internal_partition: bool,
+}
+
 impl<'a> From<&ModulePartition<'a>> for ModulePartitionModel<'a> {
     fn from(value: &ModulePartition<'a>) -> Self {
         Self {
@@ -81,8 +106,14 @@ impl<'a> From<&ModulePartition<'a>> for ModulePartitionModel<'a> {
 pub struct ModuleImplementationModel<'a> {
     pub path: PathBuf,
     pub extension: String,
-    #[serde(borrow = "'a")]
     pub dependencies: Vec<&'a str>,
+}
+
+#[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Default, Clone)]
+pub struct ModuleImplementationModelOwned {
+    pub path: PathBuf,
+    pub extension: String,
+    pub dependencies: Vec<String>,
 }
 
 impl<'a> fmt::Display for ModuleImplementationModel<'a> {
