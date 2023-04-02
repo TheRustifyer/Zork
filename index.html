@@ -1,236 +1,385 @@
 <!DOCTYPE html>
-<html>
-<head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Coverage report</title>
-    <link rel="icon" sizes="32x32" href="favicon_32.png">
-    <link rel="stylesheet" href="style.css" type="text/css">
-    <script type="text/javascript" src="coverage_html.js" defer></script>
-</head>
-<body class="indexfile">
-<header>
-    <div class="content">
-        <h1>Coverage report:
-            <span class="pc_cov">41%</span>
-        </h1>
-        <aside id="help_panel_wrapper">
-            <input id="help_panel_state" type="checkbox">
-            <label for="help_panel_state">
-                <img id="keyboard_icon" src="keybd_closed.png" alt="Show/hide keyboard shortcuts" />
-            </label>
-            <div id="help_panel">
-                <p class="legend">Shortcuts on this page</p>
-                <div class="keyhelp">
-                    <p>
-                        <kbd>n</kbd>
-                        <kbd>s</kbd>
-                        <kbd>m</kbd>
-                        <kbd>x</kbd>
-                        <kbd>b</kbd>
-                        <kbd>p</kbd>
-                        <kbd>c</kbd>
-                        &nbsp; change column sorting
-                    </p>
-                    <p>
-                        <kbd>[</kbd>
-                        <kbd>]</kbd>
-                        &nbsp; prev/next file
-                    </p>
-                    <p>
-                        <kbd>?</kbd> &nbsp; show/hide this help
-                    </p>
-                </div>
-            </div>
-        </aside>
-        <form id="filter_container">
-            <input id="filter" type="text" value="" placeholder="filter..." />
-        </form>
-        <p class="text">
-            <a class="nav" href="https://coverage.readthedocs.io">coverage.py v6.5.0</a>,
-            created at 2023-01-04 17:51 +0000
-        </p>
+<html lang="en-us">
+    <head><meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Grcov report - top_level </title>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css"></head>
+    <body>
+        <div class="container">
+    <nav class="breadcrumb is-right" aria-label="breadcrumbs">
+        <ul><li class="is-active"><a href="#">top_level</a></li>
+        </ul>
+    </nav>
+    <nav class="level">
+        <div class="level-item has-text-centered">
+        <div>
+            <p class="heading">Lines</p>
+            <p class="title has-text-danger">
+                <abbr title="426 / 1685">25.28 %</abbr></p>
+        </div>
     </div>
-</header>
-<main id="index">
-    <table class="index" data-sortable>
+
+        <div class="level-item has-text-centered">
+        <div>
+            <p class="heading">Functions</p>
+            <p class="title has-text-danger">
+                <abbr title="195 / 1388">14.05 %</abbr></p>
+        </div>
+    </div>
+
+        
+	    <div class="level-item has-text-centered">
+        <div>
+            <p class="heading">Branches</p>
+            <p class="title has-text-danger">
+                <abbr title="563 / 4192">13.43 %</abbr></p>
+        </div>
+    </div>
+
+	
+    </nav>
+
+    <table class="table is-fullwidth">
         <thead>
-            <tr class="tablehead" title="Click to sort">
-                <th class="name left" aria-sort="none" data-shortcut="n">Module</th>
-                <th aria-sort="none" data-default-sort-order="descending" data-shortcut="s">statements</th>
-                <th aria-sort="none" data-default-sort-order="descending" data-shortcut="m">missing</th>
-                <th aria-sort="none" data-default-sort-order="descending" data-shortcut="x">excluded</th>
-                <th aria-sort="none" data-default-sort-order="descending" data-shortcut="b">branches</th>
-                <th aria-sort="none" data-default-sort-order="descending" data-shortcut="p">partial</th>
-                <th class="right" aria-sort="none" data-shortcut="c">coverage</th>
+            <tr>
+                <th>Directory</th>
+                <th class="has-text-centered" colspan="3">Line Coverage</th>
+                <th class="has-text-centered" colspan="2">Functions</th>
+                
+                    <th class="has-text-centered" colspan="2">Branches</th>
+                
             </tr>
         </thead>
         <tbody>
-            <tr class="file">
-                <td class="name left"><a href="d_e754a317c03c5687_compiler_tasks_py.html">zork/compiler_tasks.py</a></td>
-                <td>214</td>
-                <td>214</td>
-                <td>0</td>
-                <td>122</td>
-                <td>0</td>
-                <td class="right" data-ratio="0 336">0%</td>
-            </tr>
-            <tr class="file">
-                <td class="name left"><a href="d_e754a317c03c5687_config_file_parser_py.html">zork/config_file_parser.py</a></td>
-                <td>102</td>
-                <td>19</td>
-                <td>0</td>
-                <td>70</td>
-                <td>18</td>
-                <td class="right" data-ratio="133 172">77%</td>
-            </tr>
-            <tr class="file">
-                <td class="name left"><a href="d_2abe43f5fa75c035___init___py.html">zork/data/__init__.py</a></td>
-                <td>0</td>
-                <td>0</td>
-                <td>0</td>
-                <td>0</td>
-                <td>0</td>
-                <td class="right" data-ratio="0 0">100%</td>
-            </tr>
-            <tr class="file">
-                <td class="name left"><a href="d_2abe43f5fa75c035_attributes_py.html">zork/data/attributes.py</a></td>
-                <td>6</td>
-                <td>0</td>
-                <td>0</td>
-                <td>2</td>
-                <td>0</td>
-                <td class="right" data-ratio="8 8">100%</td>
-            </tr>
-            <tr class="file">
-                <td class="name left"><a href="d_2abe43f5fa75c035_properties_py.html">zork/data/properties.py</a></td>
-                <td>6</td>
-                <td>0</td>
-                <td>0</td>
-                <td>2</td>
-                <td>0</td>
-                <td class="right" data-ratio="8 8">100%</td>
-            </tr>
-            <tr class="file">
-                <td class="name left"><a href="d_2abe43f5fa75c035_user_config_py.html">zork/data/user_config.py</a></td>
-                <td>132</td>
-                <td>22</td>
-                <td>0</td>
-                <td>80</td>
-                <td>11</td>
-                <td class="right" data-ratio="165 212">78%</td>
-            </tr>
-            <tr class="file">
-                <td class="name left"><a href="d_e754a317c03c5687_program_definitions_py.html">zork/program_definitions.py</a></td>
-                <td>22</td>
-                <td>0</td>
-                <td>0</td>
-                <td>2</td>
-                <td>0</td>
-                <td class="right" data-ratio="24 24">100%</td>
-            </tr>
-            <tr class="file">
-                <td class="name left"><a href="d_e754a317c03c5687_runners_py.html">zork/runners.py</a></td>
-                <td>26</td>
-                <td>26</td>
-                <td>0</td>
-                <td>10</td>
-                <td>0</td>
-                <td class="right" data-ratio="0 36">0%</td>
-            </tr>
-            <tr class="file">
-                <td class="name left"><a href="d_dc1e8d8def008fcb___init___py.html">zork/utils/__init__.py</a></td>
-                <td>0</td>
-                <td>0</td>
-                <td>0</td>
-                <td>0</td>
-                <td>0</td>
-                <td class="right" data-ratio="0 0">100%</td>
-            </tr>
-            <tr class="file">
-                <td class="name left"><a href="d_dc1e8d8def008fcb_constants_py.html">zork/utils/constants.py</a></td>
-                <td>16</td>
-                <td>0</td>
-                <td>0</td>
-                <td>0</td>
-                <td>0</td>
-                <td class="right" data-ratio="16 16">100%</td>
-            </tr>
-            <tr class="file">
-                <td class="name left"><a href="d_dc1e8d8def008fcb_exceptions_py.html">zork/utils/exceptions.py</a></td>
-                <td>49</td>
-                <td>22</td>
-                <td>0</td>
-                <td>0</td>
-                <td>0</td>
-                <td class="right" data-ratio="27 49">55%</td>
-            </tr>
-            <tr class="file">
-                <td class="name left"><a href="d_dc1e8d8def008fcb_logs_py.html">zork/utils/logs.py</a></td>
-                <td>29</td>
-                <td>29</td>
-                <td>0</td>
-                <td>6</td>
-                <td>0</td>
-                <td class="right" data-ratio="0 35">0%</td>
-            </tr>
-            <tr class="file">
-                <td class="name left"><a href="d_dc1e8d8def008fcb_regex_patterns_py.html">zork/utils/regex_patterns.py</a></td>
-                <td>3</td>
-                <td>0</td>
-                <td>0</td>
-                <td>0</td>
-                <td>0</td>
-                <td class="right" data-ratio="3 3">100%</td>
-            </tr>
-            <tr class="file">
-                <td class="name left"><a href="d_dc1e8d8def008fcb_workspace_scanner_py.html">zork/utils/workspace_scanner.py</a></td>
-                <td>9</td>
-                <td>0</td>
-                <td>0</td>
-                <td>6</td>
-                <td>0</td>
-                <td class="right" data-ratio="15 15">100%</td>
-            </tr>
-            <tr class="file">
-                <td class="name left"><a href="d_dc1e8d8def008fcb_zork_cli_py.html">zork/utils/zork_cli.py</a></td>
-                <td>40</td>
-                <td>40</td>
-                <td>0</td>
-                <td>14</td>
-                <td>0</td>
-                <td class="right" data-ratio="0 54">0%</td>
-            </tr>
-        </tbody>
-        <tfoot>
-            <tr class="total">
-                <td class="name left">Total</td>
-                <td>654</td>
-                <td>372</td>
-                <td>0</td>
-                <td>314</td>
-                <td>29</td>
-                <td class="right" data-ratio="399 968">41%</td>
-            </tr>
-        </tfoot>
-    </table>
-    <p id="no_rows">
-        No items found using the specified filter.
-    </p>
-</main>
-<footer>
-    <div class="content">
-        <p>
-            <a class="nav" href="https://coverage.readthedocs.io">coverage.py v6.5.0</a>,
-            created at 2023-01-04 17:51 +0000
-        </p>
-    </div>
-    <aside class="hidden">
-        <a id="prevFileLink" class="nav" href="d_dc1e8d8def008fcb_zork_cli_py.html"/>
-        <a id="nextFileLink" class="nav" href="d_e754a317c03c5687_compiler_tasks_py.html"/>
-        <button type="button" class="button_prev_file" data-shortcut="["/>
-        <button type="button" class="button_next_file" data-shortcut="]"/>
-        <button type="button" class="button_show_hide_help" data-shortcut="?"/>
-    </aside>
-</footer>
-</body>
+    <tr>
+        <th><a href="src&#x2F;bin&#x2F;index.html">src&#x2F;bin</a></th>
+        <!-- -->
+        <td class="p-2">
+            <progress
+                class="progress is-danger is-large"
+                value="5"
+                max="100">
+                5%
+            </progress>
+        </td>
+        <td class="has-text-centered has-background-danger p-2">
+            5%
+        </td>
+        <td class="has-text-centered has-background-danger p-2">
+            1 / 20
+        </td>
+        <!-- -->
+        <td class="has-text-centered has-background-danger p-2">20%</td>
+        <td class="has-text-centered has-background-danger p-2">1 / 5 </td>
+        <!-- -->
+        
+            <td class="has-text-centered has-background-danger p-2">0%</td>
+            <td class="has-text-centered has-background-danger p-2">0 / 20</td>
+        
+    </tr>
+
+    <tr>
+        <th><a href="src&#x2F;lib&#x2F;index.html">src&#x2F;lib</a></th>
+        <!-- -->
+        <td class="p-2">
+            <progress
+                class="progress is-danger is-large"
+                value="32.608695652173914"
+                max="100">
+                32.61%
+            </progress>
+        </td>
+        <td class="has-text-centered has-background-danger p-2">
+            32.61%
+        </td>
+        <td class="has-text-centered has-background-danger p-2">
+            30 / 92
+        </td>
+        <!-- -->
+        <td class="has-text-centered has-background-danger p-2">15.38%</td>
+        <td class="has-text-centered has-background-danger p-2">4 / 26 </td>
+        <!-- -->
+        
+            <td class="has-text-centered has-background-danger p-2">20.27%</td>
+            <td class="has-text-centered has-background-danger p-2">15 / 74</td>
+        
+    </tr>
+
+    <tr>
+        <th><a href="src&#x2F;lib&#x2F;bounds&#x2F;index.html">src&#x2F;lib&#x2F;bounds</a></th>
+        <!-- -->
+        <td class="p-2">
+            <progress
+                class="progress is-danger is-large"
+                value="0"
+                max="100">
+                0%
+            </progress>
+        </td>
+        <td class="has-text-centered has-background-danger p-2">
+            0%
+        </td>
+        <td class="has-text-centered has-background-danger p-2">
+            0 / 3
+        </td>
+        <!-- -->
+        <td class="has-text-centered has-background-danger p-2">0%</td>
+        <td class="has-text-centered has-background-danger p-2">0 / 12 </td>
+        <!-- -->
+        
+            <td class="has-text-centered has-background-success p-2">100%</td>
+            <td class="has-text-centered has-background-success p-2">0 / 0</td>
+        
+    </tr>
+
+    <tr>
+        <th><a href="src&#x2F;lib&#x2F;cache&#x2F;index.html">src&#x2F;lib&#x2F;cache</a></th>
+        <!-- -->
+        <td class="p-2">
+            <progress
+                class="progress is-danger is-large"
+                value="0"
+                max="100">
+                0%
+            </progress>
+        </td>
+        <td class="has-text-centered has-background-danger p-2">
+            0%
+        </td>
+        <td class="has-text-centered has-background-danger p-2">
+            0 / 207
+        </td>
+        <!-- -->
+        <td class="has-text-centered has-background-danger p-2">0%</td>
+        <td class="has-text-centered has-background-danger p-2">0 / 220 </td>
+        <!-- -->
+        
+            <td class="has-text-centered has-background-danger p-2">0%</td>
+            <td class="has-text-centered has-background-danger p-2">0 / 547</td>
+        
+    </tr>
+
+    <tr>
+        <th><a href="src&#x2F;lib&#x2F;cli&#x2F;input&#x2F;index.html">src&#x2F;lib&#x2F;cli&#x2F;input</a></th>
+        <!-- -->
+        <td class="p-2">
+            <progress
+                class="progress is-danger is-large"
+                value="50"
+                max="100">
+                50%
+            </progress>
+        </td>
+        <td class="has-text-centered has-background-danger p-2">
+            50%
+        </td>
+        <td class="has-text-centered has-background-danger p-2">
+            14 / 28
+        </td>
+        <!-- -->
+        <td class="has-text-centered has-background-danger p-2">9.76%</td>
+        <td class="has-text-centered has-background-danger p-2">8 / 82 </td>
+        <!-- -->
+        
+            <td class="has-text-centered has-background-danger p-2">19.49%</td>
+            <td class="has-text-centered has-background-danger p-2">23 / 118</td>
+        
+    </tr>
+
+    <tr>
+        <th><a href="src&#x2F;lib&#x2F;cli&#x2F;output&#x2F;index.html">src&#x2F;lib&#x2F;cli&#x2F;output</a></th>
+        <!-- -->
+        <td class="p-2">
+            <progress
+                class="progress is-danger is-large"
+                value="2.380952380952381"
+                max="100">
+                2.38%
+            </progress>
+        </td>
+        <td class="has-text-centered has-background-danger p-2">
+            2.38%
+        </td>
+        <td class="has-text-centered has-background-danger p-2">
+            5 / 210
+        </td>
+        <!-- -->
+        <td class="has-text-centered has-background-danger p-2">1.54%</td>
+        <td class="has-text-centered has-background-danger p-2">2 / 130 </td>
+        <!-- -->
+        
+            <td class="has-text-centered has-background-danger p-2">0%</td>
+            <td class="has-text-centered has-background-danger p-2">0 / 154</td>
+        
+    </tr>
+
+    <tr>
+        <th><a href="src&#x2F;lib&#x2F;compiler&#x2F;index.html">src&#x2F;lib&#x2F;compiler</a></th>
+        <!-- -->
+        <td class="p-2">
+            <progress
+                class="progress is-danger is-large"
+                value="0"
+                max="100">
+                0%
+            </progress>
+        </td>
+        <td class="has-text-centered has-background-danger p-2">
+            0%
+        </td>
+        <td class="has-text-centered has-background-danger p-2">
+            0 / 338
+        </td>
+        <!-- -->
+        <td class="has-text-centered has-background-danger p-2">0%</td>
+        <td class="has-text-centered has-background-danger p-2">0 / 48 </td>
+        <!-- -->
+        
+            <td class="has-text-centered has-background-danger p-2">0%</td>
+            <td class="has-text-centered has-background-danger p-2">0 / 126</td>
+        
+    </tr>
+
+    <tr>
+        <th><a href="src&#x2F;lib&#x2F;config_file&#x2F;index.html">src&#x2F;lib&#x2F;config_file</a></th>
+        <!-- -->
+        <td class="p-2">
+            <progress
+                class="progress is-danger is-large"
+                value="32.05128205128205"
+                max="100">
+                32.05%
+            </progress>
+        </td>
+        <td class="has-text-centered has-background-danger p-2">
+            32.05%
+        </td>
+        <td class="has-text-centered has-background-danger p-2">
+            25 / 78
+        </td>
+        <!-- -->
+        <td class="has-text-centered has-background-danger p-2">23.13%</td>
+        <td class="has-text-centered has-background-danger p-2">105 / 454 </td>
+        <!-- -->
+        
+            <td class="has-text-centered has-background-danger p-2">16.2%</td>
+            <td class="has-text-centered has-background-danger p-2">459 / 2833</td>
+        
+    </tr>
+
+    <tr>
+        <th><a href="src&#x2F;lib&#x2F;project_model&#x2F;index.html">src&#x2F;lib&#x2F;project_model</a></th>
+        <!-- -->
+        <td class="p-2">
+            <progress
+                class="progress is-danger is-large"
+                value="25.468164794007492"
+                max="100">
+                25.47%
+            </progress>
+        </td>
+        <td class="has-text-centered has-background-danger p-2">
+            25.47%
+        </td>
+        <td class="has-text-centered has-background-danger p-2">
+            68 / 267
+        </td>
+        <!-- -->
+        <td class="has-text-centered has-background-danger p-2">7.26%</td>
+        <td class="has-text-centered has-background-danger p-2">17 / 234 </td>
+        <!-- -->
+        
+            <td class="has-text-centered has-background-danger p-2">20.39%</td>
+            <td class="has-text-centered has-background-danger p-2">31 / 152</td>
+        
+    </tr>
+
+    <tr>
+        <th><a href="src&#x2F;lib&#x2F;utils&#x2F;index.html">src&#x2F;lib&#x2F;utils</a></th>
+        <!-- -->
+        <td class="p-2">
+            <progress
+                class="progress is-warning is-large"
+                value="78.23343848580441"
+                max="100">
+                78.23%
+            </progress>
+        </td>
+        <td class="has-text-centered has-background-warning p-2">
+            78.23%
+        </td>
+        <td class="has-text-centered has-background-warning p-2">
+            248 / 317
+        </td>
+        <!-- -->
+        <td class="has-text-centered has-background-danger p-2">33.77%</td>
+        <td class="has-text-centered has-background-danger p-2">52 / 154 </td>
+        <!-- -->
+        
+            <td class="has-text-centered has-background-danger p-2">32.05%</td>
+            <td class="has-text-centered has-background-danger p-2">25 / 78</td>
+        
+    </tr>
+
+    <tr>
+        <th><a href="src&#x2F;lib&#x2F;utils&#x2F;template&#x2F;index.html">src&#x2F;lib&#x2F;utils&#x2F;template</a></th>
+        <!-- -->
+        <td class="p-2">
+            <progress
+                class="progress is-danger is-large"
+                value="36.17021276595745"
+                max="100">
+                36.17%
+            </progress>
+        </td>
+        <td class="has-text-centered has-background-danger p-2">
+            36.17%
+        </td>
+        <td class="has-text-centered has-background-danger p-2">
+            34 / 94
+        </td>
+        <!-- -->
+        <td class="has-text-centered has-background-danger p-2">31.25%</td>
+        <td class="has-text-centered has-background-danger p-2">5 / 16 </td>
+        <!-- -->
+        
+            <td class="has-text-centered has-background-danger p-2">15.15%</td>
+            <td class="has-text-centered has-background-danger p-2">10 / 66</td>
+        
+    </tr>
+
+    <tr>
+        <th><a href="test&#x2F;index.html">test</a></th>
+        <!-- -->
+        <td class="p-2">
+            <progress
+                class="progress is-danger is-large"
+                value="3.225806451612903"
+                max="100">
+                3.23%
+            </progress>
+        </td>
+        <td class="has-text-centered has-background-danger p-2">
+            3.23%
+        </td>
+        <td class="has-text-centered has-background-danger p-2">
+            1 / 31
+        </td>
+        <!-- -->
+        <td class="has-text-centered has-background-danger p-2">14.29%</td>
+        <td class="has-text-centered has-background-danger p-2">1 / 7 </td>
+        <!-- -->
+        
+            <td class="has-text-centered has-background-danger p-2">0%</td>
+            <td class="has-text-centered has-background-danger p-2">0 / 24</td>
+        
+    </tr>
+</tbody>
+    </table></div>
+        <footer class="footer">
+            <div class="content has-text-centered">
+                <p class="heading">Date: 2023-04-02 20:20</p>
+            </div>
+        </footer>
+    </body>
 </html>
